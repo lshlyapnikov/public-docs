@@ -8,8 +8,6 @@ With a focus on low-latency FinTech applications.
 
 The views expressed are those of the speaker alone and do not represent the views of any past or current employers.
 
-<div style="page-break-after: always;"/>
-
 ## 2. Introduction
 
 A **distributed system** is a network of independent computers (nodes) that collaborate to achieve a shared goal, appearing to the user as a single, unified system.
@@ -24,8 +22,6 @@ Resilience, Fault Tolerance, Scalability, Availability, Consistency and Determin
 - **Availability** ensures that the system is accessible and operational when needed.
 - **Consistency** ensures that all nodes in the system have the same data at any given time.
 - **Determinism** guarantees that given the same initial state and inputs, the system will always produce the same outputs.
-
-<div style="page-break-after: always;"/>
 
 ## 4. Microservices Architecture vs Monolithic Architecture
 
@@ -64,8 +60,6 @@ There are various trade-offs between the two architectures. But in the context o
 
 **UDP multicast** can achieve lower latency but does not guarantee delivery or ordering, which is why it is often used in conjunction with a Sequencer architecture to ensure total ordering of events. Sequencer publishes events to all subscribers simultaneously, the receivers can detect missing messages and request retransmission, but the system can continue processing without waiting for acknowledgments, thus achieving lower latency. Refer to the MoldUDP64 protocol specification for more details on how this works.
 
-<div style="page-break-after: always;"/>
-
 ## 5. Sequencer Architecture History
 
 Island ECN (Electronic Communication Network) was one of the first to implement a Sequencer architecture in the late 1990s. It was designed to handle high-frequency trading and provide low-latency access to market data and order execution. The Sequencer architecture allowed Island ECN to achieve microsecond-level latency, which was a significant advantage in the competitive world of electronic trading.
@@ -81,8 +75,6 @@ Sequencer architecture is a specific design pattern within the microservices par
 Traditional Pub/Sub systems typically rely on TCP-based brokers that guarantee ordering only within specific partitions or topics, rather than a total global order across the entire system. In contrast, the Sequencer architecture relies on a UDP multicast-based approach where a single logical component (the Sequencer) enforces a **total global order** by assigning a unique sequence number to every event. This enables deterministic **State Machine Replication** across all downstream services, typically utilizing UDP multicast for high-throughput, low-latency distribution. Also note that **UDP multicast** allows for **O(1) dissemination to any number of subscribers**, while TCP-based Pub/Sub systems often require a broker to manage connections and route messages, which can introduce additional latency (O(n) for n subscribers).
 
 You may notice that UDP multicast does **not** guarantee delivery, but the Sequencer architecture relies on receiver-side NAKs (Negative Acknowledgments) to request retransmission of missed sequence numbers, allowing the system to continue processing without waiting for acknowledgments, thus achieving lower latency compared to TCP-based Pub/Sub systems. Please refer to the MoldUDP64 protocol specification for more details on how this works.
-
-<div style="page-break-after: always;"/>
 
 ### 6.1. Traditional Pub/Sub (e.g., Kafka, JMS, RabbitMQ)
 
@@ -118,8 +110,6 @@ graph TD
     Topic -- "TCP" --> C2
     Topic -- "TCP" --> C3
 ```
-
-<div style="page-break-after: always;"/>
 
 ### 6.2. Sequencer Architecture
 
@@ -160,8 +150,6 @@ Horizontal **Scalability** is achieved by running multiple instances of downstre
 **Availability:** High availability is maintained through Active/Active or Active/Passive configurations. Multiple replicas process the same stream of events. **Passive** node receives all downstream events, processes them but does not send any output to the Event Stream (Sequencer). It can take over immediately (become active) if the active node fails. **Active** nodes can send upstream events to the Sequencer. When two active replicas receive a downstream event, process it and send output to the Sequencer, given the deterministic nature of the architecture, both outputs will be sent with exactly the same sequence number (and expected to have exactly the same payload). The Sequencer will drop the duplicate event from the second active node, ensuring that only one output is published on the Event Stream for each sequence number.
 
 **Consistency** and **Determinism** are guaranteed by the total global ordering of events. However, the developers implementing the downstream services/nodes must ensure that their processing logic is deterministic, meaning that given the same initial state and the same sequence of events, they will always produce the same output. This is crucial for maintaining consistency across all replicas.
-
-<div style="page-break-after: always;"/>
 
 ## 7. Trading System Example with Sequencer Architecture
 
